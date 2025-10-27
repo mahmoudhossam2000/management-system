@@ -26,12 +26,3 @@ This application helps organizations manage their devices, repairs, employees, a
 | **Backend / Database** | Supabase (PostgreSQL + Auth) |
 
 ---
-
-## ⚙️ Setup Instructions
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/your-username/management-system.git
-cd management-system
-```
