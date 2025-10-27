@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import { supabase } from '../lib/supabaseClient'
 import logo from '../assets/download.png'
 
-function SectorSelection({ onSelectSector }) {
+function SectorSelection({ onSelectSector, onShowRepairHistory }) {
   const { user, isAdmin, signOut } = useAuth()
+  const { isDark, toggleTheme } = useTheme()
   const [searchTerm, setSearchTerm] = useState('')
   const [hoveredSector, setHoveredSector] = useState(null)
   const [sectorCounts, setSectorCounts] = useState({})
@@ -82,30 +84,47 @@ function SectorSelection({ onSelectSector }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+      <header className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-200 dark:border-slate-700 transition-colors duration-300">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img src={logo} alt="Logo" className="h-12 w-12 object-contain" />
               <div>
-                <h1 className="text-2xl font-bold text-slate-800">لوحة تحكم القطاعات</h1>
-                <p className="text-sm text-slate-600">اختر القطاع للبدء في إدارة الأجهزة</p>
+                <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">لوحة تحكم القطاعات</h1>
+                <p className="text-sm text-slate-600 dark:text-slate-400">اختر القطاع للبدء في إدارة الأجهزة</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
+              {/* Dark Mode Toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-300 group"
+                title={isDark ? 'الوضع النهاري' : 'الوضع الليلي'}
+              >
+                {isDark ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-yellow-500 group-hover:rotate-180 transition-transform duration-500">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-slate-600 group-hover:rotate-180 transition-transform duration-500">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                  </svg>
+                )}
+              </button>
+
               <div className="text-left">
-                <p className="font-semibold text-slate-800">{user?.user_metadata?.full_name || user?.email}</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-100">{user?.user_metadata?.full_name || user?.email}</p>
                 {isAdmin && (
-                  <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full mt-1">
+                  <span className="inline-block px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full mt-1">
                     مسؤول
                   </span>
                 )}
               </div>
               <button
                 onClick={handleSignOut}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 hover:shadow-md text-white rounded-lg font-semibold transition-colors"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 hover:shadow-md text-white rounded-lg font-semibold transition-all duration-300 hover:scale-105"
               >
                 تسجيل الخروج
               </button>
@@ -117,44 +136,65 @@ function SectorSelection({ onSelectSector }) {
       <div className="container mx-auto px-6 py-8">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6 border-r-4 border-blue-500">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border-r-4 border-blue-500 transition-all duration-300 hover:scale-105">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-600 text-sm mb-1">إجمالي القطاعات</p>
-                <p className="text-4xl font-bold text-slate-800">{sectors.length}</p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">إجمالي القطاعات</p>
+                <p className="text-4xl font-bold text-slate-800 dark:text-slate-100">{sectors.length}</p>
               </div>
               <div className="text-5xl">🏢</div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-lg p-6 border-r-4 border-green-500">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border-r-4 border-green-500 transition-all duration-300 hover:scale-105">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-600 text-sm mb-1">إجمالي الأجهزة</p>
-                <p className="text-4xl font-bold text-slate-800">{totalDevices}</p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">إجمالي الأجهزة</p>
+                <p className="text-4xl font-bold text-slate-800 dark:text-slate-100">{totalDevices}</p>
               </div>
               <div className="text-5xl">💻</div>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-lg p-6 border-r-4 border-purple-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-600 text-sm mb-1">متوسط الأجهزة</p>
-                <p className="text-4xl font-bold text-slate-800">{Math.round(totalDevices / sectors.length)}</p>
+          {/* Repair History Card - Admin Only */}
+          {isAdmin && onShowRepairHistory ? (
+            <button
+              onClick={onShowRepairHistory}
+              className="bg-gradient-to-br from-purple-600 to-indigo-600 dark:from-purple-700 dark:to-indigo-700 rounded-xl shadow-lg p-6 border-r-4 border-purple-400 transition-all duration-300 hover:scale-105 hover:shadow-2xl text-white text-right w-full group"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 text-sm mb-1 font-semibold">سجل الصيانة والإصلاح</p>
+                  <p className="text-2xl font-bold text-white flex items-center gap-2">
+                    عرض السجل الكامل
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 group-hover:translate-x-[-4px] transition-transform">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                    </svg>
+                  </p>
+                </div>
+                <div className="text-5xl group-hover:scale-110 transition-transform">🔧</div>
               </div>
-              <div className="text-5xl">📊</div>
+            </button>
+          ) : (
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border-r-4 border-purple-500 transition-all duration-300 hover:scale-105">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">متوسط الأجهزة</p>
+                  <p className="text-4xl font-bold text-slate-800 dark:text-slate-100">{Math.round(totalDevices / sectors.length)}</p>
+                </div>
+                <div className="text-5xl">📊</div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Search Bar */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 mb-8 border border-slate-200 dark:border-slate-700 transition-colors duration-300">
           <div className="relative">
             <input
               type="text"
               placeholder="ابحث عن قطاع..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-6 py-4 pr-12 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg transition-all"
+              className="w-full px-6 py-4 pr-12 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent text-lg transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -170,13 +210,13 @@ function SectorSelection({ onSelectSector }) {
         </div>
 
         {/* Sectors Grid */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-slate-800 mb-6">القطاعات المتاحة</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-slate-200 dark:border-slate-700 transition-colors duration-300">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6">القطاعات المتاحة</h2>
           
           {filteredSectors.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🔍</div>
-              <p className="text-xl text-slate-600">لا توجد نتائج للبحث</p>
+              <p className="text-xl text-slate-600 dark:text-slate-400">لا توجد نتائج للبحث</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

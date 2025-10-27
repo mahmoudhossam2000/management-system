@@ -5,11 +5,13 @@ import Login from './components/Login'
 import Signup from './components/Signup'
 import SectorSelection from './components/SectorSelection'
 import AdminDashboard from './components/AdminDashboard'
+import RepairHistory from './components/RepairHistory'
 
 function AppContent() {
   const { user, loading } = useAuth()
   const [showSignup, setShowSignup] = useState(false)
   const [selectedSector, setSelectedSector] = useState(null)
+  const [showRepairHistory, setShowRepairHistory] = useState(false)
 
   if (loading) {
     return (
@@ -24,6 +26,11 @@ function AppContent() {
 
   // If user is logged in
   if (user) {
+    // If repair history is requested, show repair history page
+    if (showRepairHistory) {
+      return <RepairHistory onBack={() => setShowRepairHistory(false)} />
+    }
+    
     // If sector is selected, show admin dashboard for that sector
     if (selectedSector) {
       return (
@@ -34,7 +41,12 @@ function AppContent() {
       )
     }
     // Otherwise, show sector selection
-    return <SectorSelection onSelectSector={setSelectedSector} />
+    return (
+      <SectorSelection 
+        onSelectSector={setSelectedSector}
+        onShowRepairHistory={() => setShowRepairHistory(true)}
+      />
+    )
   }
 
   // If not logged in, show login/signup or home

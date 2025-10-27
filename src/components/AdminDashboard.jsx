@@ -1,13 +1,20 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import { supabase } from '../lib/supabaseClient'
 import logo from '../assets/download.png'
 import ConfirmDialog from './ConfirmDialog'
+import EnhancedStatsCard from './dashboard/EnhancedStatsCard'
+import SearchFilter from './dashboard/SearchFilter'
+import TableSkeleton from './dashboard/TableSkeleton'
 
 function AdminDashboard({ sector, onBack }) {
   const { user, isAdmin, signOut } = useAuth()
+  const { isDark, toggleTheme } = useTheme()
   const [devices, setDevices] = useState([])
   const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filters, setFilters] = useState({ type: 'all', status: 'all' })
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingDevice, setEditingDevice] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -312,19 +319,38 @@ function AdminDashboard({ sector, onBack }) {
     broken: devices.filter(d => d.status === 'معطل').length
   }
 
+  // Filtered devices based on search and filters
+  const filteredDevices = useMemo(() => {
+    return devices.filter(device => {
+      // Search filter
+      const matchesSearch = searchTerm === '' || 
+        device.device_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        device.serial_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (device.owner_name && device.owner_name.toLowerCase().includes(searchTerm.toLowerCase()))
+
+      // Type filter
+      const matchesType = filters.type === 'all' || device.device_type === filters.type
+
+      // Status filter
+      const matchesStatus = filters.status === 'all' || device.status === filters.status
+
+      return matchesSearch && matchesType && matchesStatus
+    })
+  }, [devices, searchTerm, filters])
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+      <header className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-200 dark:border-slate-700 transition-colors duration-300">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={onBack}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors group"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors group"
                 title="العودة للقطاعات"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-slate-600 group-hover:text-blue-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                 </svg>
               </button>
@@ -332,23 +358,40 @@ function AdminDashboard({ sector, onBack }) {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-3xl">{sector?.icon}</span>
-                  <h1 className="text-2xl font-bold text-slate-800">{sector?.name}</h1>
+                  <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{sector?.name}</h1>
                 </div>
-                <p className="text-sm text-slate-600">إدارة أجهزة القطاع - {devices.length} جهاز</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">إدارة أجهزة القطاع - {devices.length} جهاز</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
+              {/* Dark Mode Toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-300 group"
+                title={isDark ? 'الوضع النهاري' : 'الوضع الليلي'}
+              >
+                {isDark ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-yellow-500 group-hover:rotate-180 transition-transform duration-500">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-slate-600 group-hover:rotate-180 transition-transform duration-500">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                  </svg>
+                )}
+              </button>
+
               <div className="text-left">
-                <p className="font-semibold text-slate-800">{user?.user_metadata?.full_name || user?.email}</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-100">{user?.user_metadata?.full_name || user?.email}</p>
                 {isAdmin && (
-                  <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full mt-1">
+                  <span className="inline-block px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full mt-1">
                     مسؤول
                   </span>
                 )}
               </div>
              <button
               onClick={handleSignOut}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 hover:shadow-md text-white rounded-lg font-semibold transition-colors"
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 hover:shadow-md text-white rounded-lg font-semibold transition-all duration-300 hover:scale-105"
             >
               تسجيل الخروج
             </button>
@@ -359,53 +402,54 @@ function AdminDashboard({ sector, onBack }) {
 
       <div className="container mx-auto px-6 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6 border-r-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-600 text-sm mb-1">إجمالي الأجهزة</p>
-                <p className="text-3xl font-bold text-slate-800">{stats.total}</p>
-              </div>
-              <div className="text-4xl">💻</div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-lg p-6 border-r-4 border-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-600 text-sm mb-1">أجهزة نشطة</p>
-                <p className="text-3xl font-bold text-slate-800">{stats.active}</p>
-              </div>
-              <div className="text-4xl">✅</div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-lg p-6 border-r-4 border-orange-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-600 text-sm mb-1">قيد الصيانة</p>
-                <p className="text-3xl font-bold text-slate-800">{stats.maintenance}</p>
-              </div>
-              <div className="text-4xl">🔧</div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-lg p-6 border-r-4 border-red-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-600 text-sm mb-1">أجهزة معطلة</p>
-                <p className="text-3xl font-bold text-slate-800">{stats.broken}</p>
-              </div>
-              <div className="text-4xl">❌</div>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <EnhancedStatsCard
+            icon="💻"
+            value={stats.total}
+            label="إجمالي الأجهزة"
+            color="blue"
+          />
+          <EnhancedStatsCard
+            icon="✅"
+            value={stats.active}
+            label="أجهزة نشطة"
+            color="green"
+          />
+          <EnhancedStatsCard
+            icon="🔧"
+            value={stats.maintenance}
+            label="قيد الصيانة"
+            color="orange"
+          />
+          <EnhancedStatsCard
+            icon="❌"
+            value={stats.broken}
+            label="أجهزة معطلة"
+            color="red"
+          />
         </div>
 
+        {/* Search and Filter */}
+        <SearchFilter
+          onSearch={setSearchTerm}
+          onFilterChange={setFilters}
+          deviceTypes={deviceTypes}
+          deviceStatuses={deviceStatuses}
+        />
+
         {/* Devices Table */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="p-6 border-b border-slate-200 flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-slate-800">قائمة الأجهزة</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden border border-slate-200 dark:border-slate-700 transition-colors duration-300">
+          <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">قائمة الأجهزة</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                عرض {filteredDevices.length} من {devices.length} جهاز
+              </p>
+            </div>
             {isAdmin && (
               <button
                 onClick={() => setShowAddModal(true)}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-semibold shadow-lg shadow-blue-500/30 transition-all"
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-semibold shadow-lg shadow-blue-500/30 transition-all hover:scale-105 hover:-translate-y-0.5"
               >
                 + إضافة جهاز جديد
               </button>
@@ -413,46 +457,49 @@ function AdminDashboard({ sector, onBack }) {
           </div>
 
           {loading ? (
+            <TableSkeleton rows={5} />
+          ) : filteredDevices.length === 0 ? (
             <div className="p-12 text-center">
-              <div className="text-4xl mb-4">⏳</div>
-              <p className="text-slate-600">جاري تحميل البيانات...</p>
-            </div>
-          ) : devices.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="text-6xl mb-4">📦</div>
-              <p className="text-xl text-slate-600 mb-2">لا توجد أجهزة مسجلة</p>
-              <p className="text-slate-500">ابدأ بإضافة أول جهاز</p>
+              <div className="text-6xl mb-4">
+                {devices.length === 0 ? '📦' : '🔍'}
+              </div>
+              <p className="text-xl text-slate-600 dark:text-slate-300 mb-2">
+                {devices.length === 0 ? 'لا توجد أجهزة مسجلة' : 'لا توجد نتائج'}
+              </p>
+              <p className="text-slate-500 dark:text-slate-400">
+                {devices.length === 0 ? 'ابدأ بإضافة أول جهاز' : 'جرب تغيير معايير البحث'}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-50">
+                <thead className="bg-slate-50 dark:bg-slate-700/50">
                   <tr>
-                    <th className="px-6 py-4 text-right text-sm font-bold text-slate-700">اسم الجهاز</th>
-                    <th className="px-6 py-4 text-right text-sm font-bold text-slate-700">النوع</th>
-                    <th className="px-6 py-4 text-right text-sm font-bold text-slate-700">الرقم التسلسلي</th>
-                    <th className="px-6 py-4 text-right text-sm font-bold text-slate-700">القطاع</th>
-                    <th className="px-6 py-4 text-right text-sm font-bold text-slate-700">الحالة</th>
-                    <th className="px-6 py-4 text-right text-sm font-bold text-slate-700">الإجراءات</th>
+                    <th className="px-6 py-4 text-right text-sm font-bold text-slate-700 dark:text-slate-300">اسم الجهاز</th>
+                    <th className="px-6 py-4 text-right text-sm font-bold text-slate-700 dark:text-slate-300">النوع</th>
+                    <th className="px-6 py-4 text-right text-sm font-bold text-slate-700 dark:text-slate-300">الرقم التسلسلي</th>
+                    <th className="px-6 py-4 text-right text-sm font-bold text-slate-700 dark:text-slate-300">القطاع</th>
+                    <th className="px-6 py-4 text-right text-sm font-bold text-slate-700 dark:text-slate-300">الحالة</th>
+                    <th className="px-6 py-4 text-right text-sm font-bold text-slate-700 dark:text-slate-300">الإجراءات</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {devices.map((device) => (
-                    <tr key={device.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 text-slate-800 font-semibold">{device.device_name}</td>
-                      <td className="px-6 py-4 text-slate-600">{device.device_type}</td>
-                      <td className="px-6 py-4 text-slate-600 font-mono text-sm">{device.serial_number}</td>
-                      <td className="px-6 py-4 text-slate-600">{device.department}</td>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                  {filteredDevices.map((device) => (
+                    <tr key={device.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all duration-200">
+                      <td className="px-6 py-4 text-slate-800 dark:text-slate-200 font-semibold">{device.device_name}</td>
+                      <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{device.device_type}</td>
+                      <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-mono text-sm">{device.serial_number}</td>
+                      <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{device.department}</td>
                       <td className="px-6 py-4">
                         <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(device.status)}`}>
                           {device.status}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
                           <button
                             onClick={() => setViewingDevice(device)}
-                            className="px-3 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg text-sm font-semibold transition-colors"
+                            className="px-3 py-1.5 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-700 dark:text-green-300 rounded-lg text-sm font-semibold transition-all hover:scale-105"
                           >
                             عرض التفاصيل
                           </button>
@@ -460,13 +507,13 @@ function AdminDashboard({ sector, onBack }) {
                             <>
                               <button
                                 onClick={() => openEditModal(device)}
-                                className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-semibold transition-colors"
+                                className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-lg text-sm font-semibold transition-all hover:scale-105"
                               >
                                 تعديل
                               </button>
                               <button
                                 onClick={() => handleDeleteClick(device)}
-                                className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-semibold transition-colors"
+                                className="px-3 py-1.5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 rounded-lg text-sm font-semibold transition-all hover:scale-105"
                               >
                                 حذف
                               </button>

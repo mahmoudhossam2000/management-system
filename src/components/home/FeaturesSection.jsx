@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useStaggerAnimation } from '../../hooks/useScrollAnimation'
 import FeatureCard from './FeatureCard'
 
 function FeaturesSection() {
@@ -35,22 +36,40 @@ function FeaturesSection() {
     }
   ]
 
+  const { ref, visibleItems } = useStaggerAnimation(features.length, 150)
+
   return (
-    <section className="container mx-auto px-6 py-20">
-      <div className="text-center mb-16">
-        <h3 className="text-4xl font-bold text-slate-800 mb-4">المميزات الرئيسية</h3>
-        <p className="text-xl text-slate-600">كل ما تحتاجه لإدارة أجهزة فريقك بفعالية</p>
+    <section ref={ref} className="container mx-auto px-6 py-20">
+      {/* Animated heading */}
+      <div 
+        className={`text-center mb-16 transition-all duration-1000 ${
+          visibleItems.length > 0 
+            ? 'opacity-100 translate-y-0' 
+            : 'opacity-0 -translate-y-10'
+        }`}
+      >
+        <h3 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-4">المميزات الرئيسية</h3>
+        <p className="text-xl text-slate-600 dark:text-slate-400">كل ما تحتاجه لإدارة أجهزة فريقك بفعالية</p>
       </div>
 
+      {/* Staggered feature cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {features.map((feature) => (
-          <FeatureCard
+        {features.map((feature, index) => (
+          <div
             key={feature.id}
-            feature={feature}
-            isHovered={hoveredCard === feature.id}
-            onMouseEnter={() => setHoveredCard(feature.id)}
-            onMouseLeave={() => setHoveredCard(null)}
-          />
+            className={`transition-all duration-700 ${
+              visibleItems.includes(index)
+                ? 'opacity-100 translate-y-0 scale-100'
+                : 'opacity-0 translate-y-10 scale-95'
+            }`}
+          >
+            <FeatureCard
+              feature={feature}
+              isHovered={hoveredCard === feature.id}
+              onMouseEnter={() => setHoveredCard(feature.id)}
+              onMouseLeave={() => setHoveredCard(null)}
+            />
+          </div>
         ))}
       </div>
     </section>

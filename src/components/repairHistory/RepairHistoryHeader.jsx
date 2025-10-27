@@ -1,21 +1,30 @@
-import { useTheme } from '../../context/ThemeContext'
 import logo from '../../assets/download.png'
 
-function Header() {
-  const { isDark, toggleTheme } = useTheme()
-
+function RepairHistoryHeader({ user, isDark, toggleTheme, handleSignOut, onBack }) {
   return (
     <header className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-200 dark:border-slate-700 transition-colors duration-300">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="Logo" className="h-16 w-18 object-cover rounded-full" />
+            {/* Back Button */}
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-300 group"
+                title="العودة"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-slate-600 dark:text-slate-400 group-hover:translate-x-1 transition-transform">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                </svg>
+              </button>
+            )}
+            <img src={logo} alt="Logo" className="h-12 w-12 object-contain" />
             <div>
-              <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">نظام إدارة الأجهزة</h1>
-              <p className="text-sm text-slate-600 dark:text-slate-400">إدارة شاملة لأجهزة القطاعات المختلفة</p>
+              <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">سجل الصيانة والإصلاح</h1>
+              <p className="text-sm text-slate-600 dark:text-slate-400">تتبع وإدارة عمليات الصيانة</p>
             </div>
           </div>
-          <nav className="flex items-center gap-4">
+          <div className="flex items-center gap-4">
             {/* Dark Mode Toggle */}
             <button
               onClick={toggleTheme}
@@ -33,17 +42,23 @@ function Header() {
               )}
             </button>
 
-            <button 
-              onClick={() => window.location.href = '?login=true'}
-              className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-semibold shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40"
+            <div className="text-left">
+              <p className="font-semibold text-slate-800 dark:text-slate-100">{user?.user_metadata?.full_name || user?.email}</p>
+              <span className="inline-block px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">
+                مسؤول
+              </span>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-300 hover:scale-105"
             >
-              تسجيل الدخول
+              تسجيل الخروج
             </button>
-          </nav>
+          </div>
         </div>
       </div>
     </header>
   )
 }
 
-export default Header
+export default RepairHistoryHeader

@@ -1,12 +1,20 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 * {
   font-family: 'Cairo', sans-serif;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   direction: rtl;
   text-align: right;
+  overflow-x: hidden;
 }
 
 @keyframes shake {
@@ -66,4 +74,39 @@ body {
 
 .animate-slideUp {
   animation: slideUp 0.7s ease-out;
+}
+
+/* Print Styles */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Ensure backgrounds print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Remove dark mode backgrounds in print */
+  .dark\:bg-slate-800,
+  .dark\:bg-slate-700,
+  .dark\:bg-slate-900 {
+    background-color: white !important;
+  }
+
+  .dark\:text-slate-100,
+  .dark\:text-slate-200 {
+    color: #1e293b !important;
+  }
+
+  .dark\:text-slate-400 {
+    color: #64748b !important;
+  }
 }
